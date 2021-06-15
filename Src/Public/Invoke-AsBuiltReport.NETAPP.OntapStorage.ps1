@@ -32,7 +32,7 @@ function Invoke-AsBuiltReport.NETAPP.OntapStorage {
     #Connect to Ontap Storage Array using supplied credentials
     foreach ($OntapArray in $Target) {
         Try {
-            $Array = Connect-NcController -Name $OntapArray -Credentials $Credential
+            $Array = Connect-NcController -Name $OntapArray -Credential $Credential
         } Catch {
             Write-Error $_
         }
