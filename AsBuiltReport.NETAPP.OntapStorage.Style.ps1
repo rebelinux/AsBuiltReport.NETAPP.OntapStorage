@@ -1,5 +1,5 @@
 #region NetApp Storage Document Style
-DocumentOption -EnableSectionNumbering -PageSize A4 -DefaultFont 'Arial' -MarginLeftAndRight 71 -MarginTopAndBottom 71 -Orientation $Orientation
+DocumentOption -EnableSectionNumbering -PageSize Letter -DefaultFont 'Arial' -MarginLeftAndRight 55 -MarginTopAndBottom 71 -Orientation $Orientation
 
 Style -Name 'Title' -Size 24 -Color '194fb4' -Align Center
 Style -Name 'Title 2' -Size 18 -Color '2F2F2F' -Align Center
