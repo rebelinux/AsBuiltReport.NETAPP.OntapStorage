@@ -37,7 +37,7 @@ Sample NetApp Ontap As Built report with health checks, using custom report styl
 
 ![Sample NetApp Ontap As Built Report](https://github.com/rebelinux/AsBuiltReport.NETAPP.OntapStorage/raw/master/Samples/Sample_NetApp_Report_1.png "Sample NetApp Ontap As Built Report")
 
-# Getting Started
+# :beginner: Getting Started
 
 Below are the instructions on how to install, configure and generate a NetApp Ontap As Built Report
 
