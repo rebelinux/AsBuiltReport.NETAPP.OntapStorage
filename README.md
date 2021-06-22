@@ -1,4 +1,8 @@
 <p align="center">
+    <a href="https://www.asbuiltreport.com/" alt="AsBuiltReport"></a> 
+            <img src='https://raw.githubusercontent.com/AsBuiltReport/AsBuiltReport/master/AsBuiltReport.png' width="8%" height="8%" /></a>
+</p>
+<p align="center">
     <a href="https://www.powershellgallery.com/packages/AsBuiltReport.NETAPP.OntapStorage/" alt="PowerShell Gallery Version">
         <img src="https://img.shields.io/powershellgallery/v/AsBuiltReport.NETAPP.OntapStorage.svg" /></a>
     <a href="https://www.powershellgallery.com/packages/AsBuiltReport.NETAPP.OntapStorage/" alt="PS Gallery Downloads">
@@ -53,7 +57,6 @@ This report is compatible with the following PowerShell versions;
 |:----------------------:|:---------------:|:------------:|
 |   :white_check_mark:   |   :white_check_mark:    |  :white_check_mark:  |
 
-
 ## :wrench: System Requirements
 
 Each of the following modules will be automatically installed by following the [module installation](https://github.com/AsBuiltReport/AsBuiltReport.Nutanix.PrismElement#package-module-installation) procedure.
@@ -64,7 +67,7 @@ These modules may also be manually installed.
 |--------------------|:------------------------:|:---------------------------------------------------------------------:|:---------------------------------------------------------------------------:|
 | PScribo            |          0.9.1           |      [Link](https://www.powershellgallery.com/packages/PScribo)       |         [Link](https://github.com/iainbrighton/PScribo/tree/master)         |
 | AsBuiltReport.Core |          1.1.0           | [Link](https://www.powershellgallery.com/packages/AsBuiltReport.Core) | [Link](https://github.com/AsBuiltReport/AsBuiltReport.Core/releases/latest) |
-| Netapp.Ontap |          9.9.1           | [Link](https://www.powershellgallery.com/packages/NetApp.ONTAP/9.9.1.2106) |  |
+| Netapp.Ontap |          9.9.1           | [Link](https://www.powershellgallery.com/packages/NetApp.ONTAP) |  |
 
 ### :package: Module Installation
 
@@ -75,11 +78,11 @@ Install-Module NetApp.ONTAP
 Install-Module AsBuiltReport
 ```
 
-### Required Privileges
+### :closed_lock_with_key: Required Privileges
 
 To generate a NetApp Ontap Array report, a user account with the readonly role of higher on the AFF/FAS is required.
 
-## Configuration
+## :pencil2: Configuration
 
 The NetApp Ontap Array As Built Report utilises a JSON file to allow configuration of report information, options, detail and healthchecks.
 
@@ -97,7 +100,7 @@ The following provides information of how to configure each schema within the re
 
 <Placeholder for future - there are currently no configurable options for the NetApp Ontap Array Report>
 
-## Examples
+## :computer: Examples
 
 There is one example listed below on running the AsBuiltReport script against a NetApp Ontap Array target. Refer to the `README.md` file in the main AsBuiltReport project repository for more examples.
 
@@ -107,4 +110,4 @@ There is one example listed below on running the AsBuiltReport script against a 
 PS C:\>New-AsBuiltReport -Report NETAPP.OntapStorage -Target 10.10.30.20 -Credential (Get-Credential) -Format HTML,Word -OutputPath C:\scripts\
 ```
 
-## Known Issues
+## :x: Known Issues
