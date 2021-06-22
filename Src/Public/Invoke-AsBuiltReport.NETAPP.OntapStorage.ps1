@@ -22,7 +22,6 @@ function Invoke-AsBuiltReport.NETAPP.OntapStorage {
         [pscredential] $Credential,
 		$StylePath
     )
-
     # If custom style not set, use default style
     if (!$StylePath) {
         & "$PSScriptRoot\..\..\AsBuiltReport.NETAPP.OntapStorage.Style.ps1"
@@ -44,7 +43,10 @@ function Invoke-AsBuiltReport.NETAPP.OntapStorage {
             $script:ArrayAggr = Get-NcAggr
             $script:ArrayVolumes = Get-NcVol
             $script:AggrSpace = Get-NcAggr
-            $script:NodeSum = Get-NcNodeInfo
+            $script:NodeSum = Get-NcNode
+            $script:NodeHW = Get-NcNodeInfo
+            $script:AutoSupport = Get-NcAutoSupportConfig
+            $script:ServiceProcessor = Get-NcServiceProcessor
 
 
 
@@ -52,22 +54,64 @@ function Invoke-AsBuiltReport.NETAPP.OntapStorage {
                 Section -Style Heading2 'Cluster Summary' {
                     Paragraph "The following section provides a summary of the array configuration for $($ClusterInfo.ClusterName)."
                     BlankLine
-                    #Provide a summary of the Storage Array
-                    $ClusterSummary = [PSCustomObject] @{
-                        'Cluster Name' = $ClusterInfo.ClusterName
-                        'Cluster UUID' = $ClusterInfo.ClusterUuid
-                        'Cluster Serial' = $ClusterInfo.ClusterSerialNumber
-                        'Cluster Controller' = $ClusterInfo.NcController
-                        'Cluster Contact' = $ClusterInfo.ClusterContact
-                        'Cluster Location' = $ClusterInfo.ClusterLocation
-                        'Ontap Version' = $ClusterVersion.value
-                        'Number of Aggregates' = $ArrayAggr.count
-                        'Number of Volumes' = $ArrayVolumes.count
+                    Section -Style Heading3 'Cluster Information' {
+                        Paragraph "The following section provides a summary of the Cluster Information on $($ClusterInfo.ClusterName)."
+                        BlankLine
+                        $ClusterSummary = [PSCustomObject] @{
+                            'Cluster Name' = $ClusterInfo.ClusterName
+                            'Cluster UUID' = $ClusterInfo.ClusterUuid
+                            'Cluster Serial' = $ClusterInfo.ClusterSerialNumber
+                            'Cluster Controller' = $ClusterInfo.NcController
+                            'Cluster Contact' = $ClusterInfo.ClusterContact
+                            'Cluster Location' = $ClusterInfo.ClusterLocation
+                            'Ontap Version' = $ClusterVersion.value
+                            'Number of Aggregates' = $ArrayAggr.count
+                            'Number of Volumes' = $ArrayVolumes.count
 
+                        }
+                        $ClusterSummary | Table -Name 'Cluster Information' -List -ColumnWidths 25, 75
+
+                }#End Section Heading3 Cluster HA Status
+            }
+                    Section -Style Heading3 'Cluster HA Status' {
+                        Paragraph "The following section provides a summary of the Cluster HA Status on $($ClusterInfo.ClusterName)."
+                        BlankLine
+                        $NodeSummary = foreach ($Nodes in $NodeSum) {
+                            $ClusterHa = Get-NcClusterHa -Node $Nodes.Node
+                            [PSCustomObject] @{
+                            'Name' = $Nodes.Node
+                            'Partner' = $ClusterHa.Partner
+                            'TakeOver Possible' = $ClusterHa.TakeoverPossible
+                            'TakeOver State' = $ClusterHa.TakeoverState
+                            'HA Mode' = $ClusterHa.CurrentMode.ToUpper()
+                            'HA State' = $ClusterHa.State.ToUpper()
+                            
+                        }
                     }
-                    $ClusterSummary | Table -Name 'Cluster Summary' -List
-                }#End for Cluster Summary
-            }#End Report for Cluster
+                    if ($NodeSummary) {
+                        $NodeSummary | Where-Object { $_.'TakeOver State' -like 'in_takeover' } | Set-Style -Style Warning -Property 'TakeOver State'
+                        $NodeSummary | Where-Object { $_.'HA State' -notlike 'connected' } | Set-Style -Style Warning -Property 'HA State'
+                    }
+                    $NodeSummary | Sort-Object -Property Name | Table -Name 'Cluster HA Status'
+            }#End Section Heading3 Cluster HA Status
+                    Section -Style Heading3 'Cluster AutoSupport Status' {
+                        Paragraph "The following section provides a summary of the Cluster AutoSupport Status on $($ClusterInfo.ClusterName)."
+                        BlankLine
+                        $AutoSupportSummary = foreach ($NodesAUTO in $AutoSupport) {
+                            [PSCustomObject] @{
+                            'Node Name' = $NodesAUTO.NodeName
+                            'Protocol' = $NodesAUTO.Transport
+                            'Enabled' = $NodesAUTO.IsEnabled
+                            'Last Time Stamp' = $NodesAUTO.LastTimestampDT
+                            'Last Subject' = $NodesAUTO.LastSubject
+                        }
+                    }
+                    if ($AutoSupportSummary) {
+                        $AutoSupportSummary | Where-Object { $_.'Enabled' -like 'False' } | Set-Style -Style Warning -Property 'Enabled'
+                    }
+                    $AutoSupportSummary | Table -Name 'Cluster AutoSupport Status' -List -ColumnWidths 25, 75
+            }#End Section Heading3 Cluster HA Status
+            }#End for Cluster Summary
             
                 Section -Style Heading2 'Node Summary' {
                     Paragraph "The following section provides a summary of the Node on $($ClusterInfo.ClusterName)."
@@ -77,36 +121,71 @@ function Invoke-AsBuiltReport.NETAPP.OntapStorage {
                             BlankLine
                             $NodeSummary = foreach ($Nodes in $NodeSum) {
                                 [PSCustomObject] @{
-                                'Name' = $Nodes.SystemName
-                                'Model' = $Nodes.SystemModel
-                                'System Id' = $Nodes.SystemId
-                                'Serial#' = $Nodes.SystemSerialNumber
-                                'Type' = $Nodes.ProdType
+                                'Name' = $Nodes.Node
+                                'System Model' = $Nodes.NodeModel
+                                'System Id' = $Nodes.NodeSystemId
+                                'Serial Number' = $Nodes.NodeSerialNumber
+                                'Node Uptime' = $Nodes.NodeUptimeTS
 
                           }
                     }
-                    $NodeSummary | Sort-Object -Property Name | Table -Name 'Aggregate Summary' 
-                    }#End Section Heading3Node Summary
-                        Section -Style Heading3 'Node HA Status' {
-                            Paragraph "The following section provides a summary of the Node HA Status on $($ClusterInfo.ClusterName)."
+                    $NodeSummary | Sort-Object -Property Name | Table -Name 'Node Summary'
+                    }#End Section Heading Node Summary
+                        Section -Style Heading3 'Node Hardware Information' {
+                            Paragraph "The following section provides the Node Hardware inventory on $($ClusterInfo.ClusterName)."
                             BlankLine
-                            $NodeSummary = foreach ($Nodes in $NodeSum) {
-                                $ClusterHa = Get-NcClusterHa -Node $Nodes.SystemName
+                            $NodeHardWare = foreach ($NodeHWs in $NodeHW) {
+                                $NodeInfo = Get-NcNode -Node $NodeHWs.SystemName
                                 [PSCustomObject] @{
-                                'Name' = $Nodes.SystemName
-                                'Partner' = $ClusterHa.Partner
-                                'TakeOver Possible' = $ClusterHa.TakeoverPossible
-                                'TakeOver State' = $ClusterHa.TakeoverState
-                                'Ha Mode' = $ClusterHa.CurrentMode
-                                'Ha State' = $ClusterHa.State
-                                
-                            }
+                                'Name' = $NodeHWs.SystemName
+                                'System Type' = $NodeHWs.SystemMachineType
+                                'CPU Count' = $NodeHWs.NumberOfProcessors
+                                'Total Memory' = "$($NodeHWs.MemorySize / 1024)GB"
+                                'Vendor' = $NodeHWs.VendorId
+                                'AFF/FAS' = $NodeHWs.ProdType
+                                'All Flash Optimized' = $NodeInfo.IsAllFlashOptimized
+                                'Epsilon' = $NodeInfo.IsEpsilonNode
+                                'System Healthy' = $NodeInfo.IsNodeHealthy.ToString().Replace("False", "UnHealthy").Replace("True", "Healthy")
+                                'Failed Fan Count' = $NodeInfo.EnvFailedFanCount
+                                'Failed Fan Error' = $NodeInfo.EnvFailedFanMessage
+                                'Failed PowerSupply Count' = $NodeInfo.EnvFailedPowerSupplyCount
+                                'Failed PowerSupply Error' = $NodeInfo.EnvFailedPowerSupplyMessage
+                                'Over Temperature' = $NodeInfo.EnvOverTemperature.ToString().Replace("False", "Normal Temperature").Replace("True", "High Temperature")
+                                'NVRAM Battery Healthy' = $NodeInfo.NvramBatteryStatus
+
                         }
-                        $NodeSummary | Sort-Object -Property Name | Table -Name 'Node HA Status'
-                    }#End Section Heading3 Node HA Status
+                    }
+                    if ($NodeHardWare) {
+                        $NodeHardWare | Where-Object { $_.'System Healthy' -like 'UnHealthy' } | Set-Style -Style Critical -Property 'System Healthy'
+                        $NodeHardWare | Where-Object { $_.'Failed Fan Count' -gt 0 } | Set-Style -Style Critical -Property 'Failed Fan Count'
+                        $NodeHardWare | Where-Object { $_.'Failed PowerSupply Count' -gt 0 } | Set-Style -Style Critical -Property 'Failed PowerSupply Count'
+                        $NodeHardWare | Where-Object { $_.'Over Temperature' -like 'High Temperature' } | Set-Style -Style Critical -Property 'Over Temperature'
+                        $NodeHardWare | Where-Object { $_.'NVRAM Battery Healthy' -notlike 'battery_ok' } | Set-Style -Style Critical -Property 'NVRAM Battery Healthy'
+                    }
+                    $NodeHardWare | Sort-Object -Property Name | Table -Name 'Node Hardware Information' -List -ColumnWidths 40, 60
+                    }#End Section Heading Node Hardware Information
+                        Section -Style Heading3 'Node Service-Processor Information' {
+                            Paragraph "The following section provides the Node Service-Processor Information on $($ClusterInfo.ClusterName)."
+                            BlankLine
+                            $NodeHardWare = foreach ($NodeSPs in $ServiceProcessor) {
+                                [PSCustomObject] @{
+                                'Name' = $NodeSPs.Node
+                                'Type' = $NodeSPs.Type
+                                'IP Address' = $NodeSPs.IpAddress
+                                'MAC Address' = $NodeSPs.MacAddress
+                                'Network Configured' = $NodeSPs.IsIpConfigured
+                                'Firmware' = $NodeSPs.FirmwareVersion
+                                'Status' = $NodeSPs.Status
+                        }
+                    }
+                    if ($NodeHardWare) {
+                        $NodeHardWare | Where-Object { $_.'Status' -like 'offline' -or $_.'Status' -like 'degraded' } | Set-Style -Style Critical -Property 'Status'
+                        $NodeHardWare | Where-Object { $_.'Status' -like 'unknown' -or $_.'Status' -like 'sp-daemon-offline' } | Set-Style -Style Warning -Property 'Status'
+                        $NodeHardWare | Where-Object { $_.'Network Configured' -like "false" } | Set-Style -Style Critical -Property 'Network Configured'
+                    }
+                    $NodeHardWare | Sort-Object -Property Name | Table -Name 'Node Service-Processor Information' 
+                    }#End Section Heading Node Service-Processor Information
                 }#End Section Heading2 Node Summary
-
-
                 Section -Style Heading2 'Storage Summary' {
                         Paragraph "The following section provides a summary of the storage usage on $($ClusterInfo.ClusterName)."
                         BlankLine
@@ -123,7 +202,7 @@ function Invoke-AsBuiltReport.NETAPP.OntapStorage {
                     }
                         if ($AggrSpaceSummary) {
                             $AggrSpaceSummary | Where-Object { $_.'State' -eq 'failed' } | Set-Style -Style Critical -Property 'State'
-                            $AggrSpaceSummary | Where-Object { $_.'State' -eq 'unknown' } | Set-Style -Style Warning -Property 'State'
+                            $AggrSpaceSummary | Where-Object { $_.'State' -eq 'unknown' -or $_.'State' -eq 'offline' } | Set-Style -Style Warning -Property 'State'
                             $AggrSpaceSummary | Where-Object { $_.'Used %' -ge 90 } | Set-Style -Style Critical -Property 'Used %'
                         }
                         $AggrSpaceSummary | Sort-Object -Property Name | Table -Name 'Aggregate Summary' 
