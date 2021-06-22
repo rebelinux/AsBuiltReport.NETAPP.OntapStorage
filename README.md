@@ -31,11 +31,23 @@ For detailed documentation around the whole project, please refer to the `README
 
 ## :books: Sample Reports
 
-### Sample Report - Custom Style
+### Sample Report - Custom Style 1
 
 Sample NetApp Ontap As Built report with health checks, using custom report style.
 
 ![Sample NetApp Ontap As Built Report](https://github.com/rebelinux/AsBuiltReport.NETAPP.OntapStorage/raw/master/Samples/Sample_NetApp_Report_1.png "Sample NetApp Ontap As Built Report")
+
+### Sample Report - Custom Style 2
+
+Sample NetApp Ontap As Built report with health checks, using custom report style.
+
+![Sample NetApp Ontap As Built Report](https://github.com/rebelinux/AsBuiltReport.NETAPP.OntapStorage/raw/master/Samples/Sample_NetApp_Report_2.png "Sample NetApp Ontap As Built Report")
+
+### Sample Report - Custom Style 3
+
+Sample NetApp Ontap As Built report with health checks, using custom report style.
+
+![Sample NetApp Ontap As Built Report](https://github.com/rebelinux/AsBuiltReport.NETAPP.OntapStorage/raw/master/Samples/Sample_NetApp_Report_3.png "Sample NetApp Ontap As Built Report")
 
 # :beginner: Getting Started
 
