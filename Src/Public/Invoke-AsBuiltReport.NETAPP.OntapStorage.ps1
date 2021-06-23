@@ -20,7 +20,7 @@ function Invoke-AsBuiltReport.NETAPP.OntapStorage {
     param (
         [string[]] $Target,
         [pscredential] $Credential,
-		$StylePath
+		[String]$StylePath
     )
     # If custom style not set, use default style
     if (!$StylePath) {
@@ -34,7 +34,7 @@ function Invoke-AsBuiltReport.NETAPP.OntapStorage {
         Try {
             $Array = Connect-NcController -Name $OntapArray -Credential $Credential
         } Catch {
-            Write-Error $_
+            Write-Verbose "Unable to connect to the $OntapArray Array"
         }
 
         if ($Array) {
@@ -48,6 +48,7 @@ function Invoke-AsBuiltReport.NETAPP.OntapStorage {
             $script:AutoSupport = Get-NcAutoSupportConfig
             $script:ServiceProcessor = Get-NcServiceProcessor
             $script:License = Get-NcLicense
+            $script:LicenseFeature = Get-NcFeatureStatus
 
 
 
@@ -131,7 +132,7 @@ function Invoke-AsBuiltReport.NETAPP.OntapStorage {
                           }
                     }
                     $NodeSummary | Sort-Object -Property Name | Table -Name 'Node Summary'
-                    }#End Section Heading Node Summary
+                    }#End Section Heading2 Node Summary
                         Section -Style Heading3 'Node Hardware Information' {
                             Paragraph "The following section provides the Node Hardware inventory on $($ClusterInfo.ClusterName)."
                             BlankLine
@@ -164,7 +165,7 @@ function Invoke-AsBuiltReport.NETAPP.OntapStorage {
                         $NodeHardWare | Where-Object { $_.'NVRAM Battery Healthy' -notlike 'battery_ok' } | Set-Style -Style Critical -Property 'NVRAM Battery Healthy'
                     }
                     $NodeHardWare | Sort-Object -Property Name | Table -Name 'Node Hardware Information' -List -ColumnWidths 40, 60
-                    }#End Section Heading Node Hardware Information
+                    }#End Section Heading3 Node Hardware Information
                         Section -Style Heading3 'Node Service-Processor Information' {
                             Paragraph "The following section provides the Node Service-Processor Information on $($ClusterInfo.ClusterName)."
                             BlankLine
@@ -185,7 +186,7 @@ function Invoke-AsBuiltReport.NETAPP.OntapStorage {
                         $NodeHardWare | Where-Object { $_.'Network Configured' -like "false" } | Set-Style -Style Critical -Property 'Network Configured'
                     }
                     $NodeHardWare | Sort-Object -Property Name | Table -Name 'Node Service-Processor Information' 
-                    }#End Section Heading Node Service-Processor Information
+                    }#End Section Heading3 Node Service-Processor Information
                 }#End Section Heading2 Node Summary
                 Section -Style Heading2 'Storage Summary' {
                         Paragraph "The following section provides a summary of the storage usage on $($ClusterInfo.ClusterName)."
@@ -211,24 +212,40 @@ function Invoke-AsBuiltReport.NETAPP.OntapStorage {
                 Section -Style Heading2 'License Summary' {
                         Paragraph "The following section provides a summary of the license usage on $($ClusterInfo.ClusterName)."
                         BlankLine
-                        $LicenseSummary = foreach ($Licenses in $License) {
-                            $EntitlementRisk = Get-NcLicenseEntitlementRisk -Package $Licenses.Package
-                            [PSCustomObject] @{
-                            'Name' = $Licenses.Owner
-                            'Package' = $Licenses.Package
-                            'Type' = $Licenses.Type
-                            'Description' = $Licenses.Description
-                            'Risk' = $EntitlementRisk.Risk
+                            Section -Style Heading3 'License Usage Summary' {
+                                Paragraph "The following section provides the installed licenses on $($ClusterInfo.ClusterName)."
+                                BlankLine
+                            $LicenseSummary = foreach ($Licenses in $License) {
+                                $EntitlementRisk = Get-NcLicenseEntitlementRisk -Package $Licenses.Package
+                                [PSCustomObject] @{
+                                'Name' = $Licenses.Owner
+                                'Package' = $Licenses.Package
+                                'Type' = $Licenses.Type
+                                'Description' = $Licenses.Description
+                                'Risk' = $EntitlementRisk.Risk
 
+                            }
+                        }
+                            if ($LicenseSummary) {
+                                $LicenseSummary | Where-Object { $_.'Risk' -like 'low' } | Set-Style -Style Ok -Property 'Risk'
+                                $LicenseSummary | Where-Object { $_.'Risk' -like 'medium' -or $_.'Risk' -like 'unknown' } | Set-Style -Style Warning -Property 'Risk'
+                                $LicenseSummary | Where-Object { $_.'Risk' -like 'High' } | Set-Style -Style Critical -Property 'Risk'
+                            }
+                            $LicenseSummary | Sort-Object -Property Description| Table -Name 'License Summary' 
+                        }#End Section Heading2 License Summary  
+                        Section -Style Heading3 'License Feature Summary' {
+                            Paragraph "The following section provides the License Feature Usage on $($ClusterInfo.ClusterName)."
+                            BlankLine
+                            $LicenseFeature = foreach ($NodeLFs in $LicenseFeature) {
+                                [PSCustomObject] @{
+                                'Name' = $NodeLFs.FeatureName
+                                'Status' = $NodeLFs.Status
+                                'Notes' = $NodeLFs.Notes
                         }
                     }
-                        if ($LicenseSummary) {
-                            $LicenseSummary | Where-Object { $_.'Risk' -like 'low' } | Set-Style -Style Ok -Property 'Risk'
-                            $LicenseSummary | Where-Object { $_.'Risk' -like 'medium' -or $_.'Risk' -like 'unknown' } | Set-Style -Style Warning -Property 'Risk'
-                            $LicenseSummary | Where-Object { $_.'Risk' -like 'High' } | Set-Style -Style Critical -Property 'Risk'
-                        }
-                        $LicenseSummary | Sort-Object -Property Description| Table -Name 'License Summary' 
-                    }#End Section Heading2 Aggregate Summary                   
+                    $LicenseFeature | Sort-Object -Property Status | Table -Name 'License Feature Summary' 
+                    }#End Section Heading3 Node Service-Processor Information 
+                }        
         }#End Section Heading1 Report for Cluster
     }
 }
