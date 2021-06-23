@@ -223,9 +223,9 @@ function Invoke-AsBuiltReport.NETAPP.OntapStorage {
                         }
                     }
                         if ($LicenseSummary) {
-                            $LicenseSummary | Where-Object { $_.'State' -eq 'failed' } | Set-Style -Style Critical -Property 'State'
-                            $LicenseSummary | Where-Object { $_.'State' -eq 'unknown' } | Set-Style -Style Warning -Property 'State'
-                            $LicenseSummary | Where-Object { $_.'Used %' -ge 90 } | Set-Style -Style Critical -Property 'Used %'
+                            $LicenseSummary | Where-Object { $_.'Risk' -like 'low' } | Set-Style -Style Ok -Property 'Risk'
+                            $LicenseSummary | Where-Object { $_.'Risk' -like 'medium' -or $_.'Risk' -like 'unknown' } | Set-Style -Style Warning -Property 'Risk'
+                            $LicenseSummary | Where-Object { $_.'Risk' -like 'High' } | Set-Style -Style Critical -Property 'Risk'
                         }
                         $LicenseSummary | Sort-Object -Property Description| Table -Name 'License Summary' 
                     }#End Section Heading2 Aggregate Summary                   
