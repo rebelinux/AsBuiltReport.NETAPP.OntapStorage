@@ -47,6 +47,7 @@ function Invoke-AsBuiltReport.NETAPP.OntapStorage {
             $script:NodeHW = Get-NcNodeInfo
             $script:AutoSupport = Get-NcAutoSupportConfig
             $script:ServiceProcessor = Get-NcServiceProcessor
+            $script:License = Get-NcLicense
 
 
 
@@ -210,24 +211,24 @@ function Invoke-AsBuiltReport.NETAPP.OntapStorage {
                 Section -Style Heading2 'License Summary' {
                         Paragraph "The following section provides a summary of the license usage on $($ClusterInfo.ClusterName)."
                         BlankLine
-                        $AggrSpaceSummary = foreach ($Aggr in $AggrSpace) {
+                        $LicenseSummary = foreach ($Licenses in $License) {
+                            $EntitlementRisk = Get-NcLicenseEntitlementRisk -Package $Licenses.Package
                             [PSCustomObject] @{
-                            'Name' = $Aggr.Name
-                            'Capacity' = "$([math]::Round(($Aggr.Totalsize) / "1$($Unit)", 2))$Unit"
-                            'Available' = "$([math]::Round(($Aggr.Available) / "1$($Unit)", 2))$Unit"
-                            'Used %' = [int]$Aggr.Used
-                            'Disk Count' = $Aggr.Disks
-                            'Raid Type' = $Aggr.RaidType.Split(",")[0]
-                            'State' = $Aggr.State
+                            'Name' = $Licenses.Owner
+                            'Package' = $Licenses.Package
+                            'Type' = $Licenses.Type
+                            'Description' = $Licenses.Description
+                            'Risk' = $EntitlementRisk.Risk
+
                         }
                     }
-                        if ($AggrSpaceSummary) {
-                            $AggrSpaceSummary | Where-Object { $_.'State' -eq 'failed' } | Set-Style -Style Critical -Property 'State'
-                            $AggrSpaceSummary | Where-Object { $_.'State' -eq 'unknown' } | Set-Style -Style Warning -Property 'State'
-                            $AggrSpaceSummary | Where-Object { $_.'Used %' -ge 90 } | Set-Style -Style Critical -Property 'Used %'
+                        if ($LicenseSummary) {
+                            $LicenseSummary | Where-Object { $_.'State' -eq 'failed' } | Set-Style -Style Critical -Property 'State'
+                            $LicenseSummary | Where-Object { $_.'State' -eq 'unknown' } | Set-Style -Style Warning -Property 'State'
+                            $LicenseSummary | Where-Object { $_.'Used %' -ge 90 } | Set-Style -Style Critical -Property 'Used %'
                         }
-                        $AggrSpaceSummary | Sort-Object -Property Name | Table -Name 'License Summary' 
-                    }#End Section Heading2 Aggregate Summary                    
+                        $LicenseSummary | Sort-Object -Property Description| Table -Name 'License Summary' 
+                    }#End Section Heading2 Aggregate Summary                   
         }#End Section Heading1 Report for Cluster
     }
 }
