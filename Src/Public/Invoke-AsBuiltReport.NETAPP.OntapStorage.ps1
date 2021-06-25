@@ -77,7 +77,7 @@ function Invoke-AsBuiltReport.NETAPP.OntapStorage {
                             'Number of Volumes' = $ArrayVolumes.count
                             'Overall System Health' = $ClusterDiag.Status.ToUpper()
                         }
-                        if ($ClusterSummary) {
+                        if ($Healthcheck.Cluster.Summary) {
                             $ClusterSummary | Where-Object { $_.'Overall System Health' -like 'OK' } | Set-Style -Style OK -Property 'Overall System Health'
                             $ClusterSummary | Where-Object { $_.'Overall System Health' -notlike 'OK' } | Set-Style -Style Critical -Property 'Overall System Health'
                         }
@@ -98,7 +98,7 @@ function Invoke-AsBuiltReport.NETAPP.OntapStorage {
                                 'HA State' = $ClusterHa.State.ToUpper()
                             }
                         }   
-                        if ($NodeSummary) {
+                        if ($Healthcheck.Cluster.HA) {
                             $NodeSummary | Where-Object { $_.'TakeOver State' -like 'in_takeover' } | Set-Style -Style Warning -Property 'TakeOver State'
                             $NodeSummary | Where-Object { $_.'HA State' -notlike 'connected' } | Set-Style -Style Warning -Property 'HA State'
                         }
@@ -116,7 +116,7 @@ function Invoke-AsBuiltReport.NETAPP.OntapStorage {
                                 'Last Subject' = $NodesAUTO.LastSubject
                             }
                         }
-                        if ($AutoSupportSummary) {
+                        if ($Healthcheck.Cluster.AutoSupport) {
                             $AutoSupportSummary | Where-Object { $_.'Enabled' -like 'False' } | Set-Style -Style Warning -Property 'Enabled'
                         }
                         $AutoSupportSummary | Table -Name 'Cluster AutoSupport Status' -List -ColumnWidths 25, 75
@@ -163,7 +163,7 @@ function Invoke-AsBuiltReport.NETAPP.OntapStorage {
                                     'NVRAM Battery Healthy' = $NodeInfo.NvramBatteryStatus
                                 }
                             }
-                            if ($NodeHardWare) {
+                            if ($Healthcheck.Node.HW) {
                                 $NodeHardWare | Where-Object { $_.'System Healthy' -like 'UnHealthy' } | Set-Style -Style Critical -Property 'System Healthy'
                                 $NodeHardWare | Where-Object { $_.'Failed Fan Count' -gt 0 } | Set-Style -Style Critical -Property 'Failed Fan Count'
                                 $NodeHardWare | Where-Object { $_.'Failed PowerSupply Count' -gt 0 } | Set-Style -Style Critical -Property 'Failed PowerSupply Count'
@@ -175,7 +175,7 @@ function Invoke-AsBuiltReport.NETAPP.OntapStorage {
                         Section -Style Heading3 'Node Service-Processor Information' {
                             Paragraph "The following section provides the Node Service-Processor Information on $($ClusterInfo.ClusterName)."
                             BlankLine
-                            $NodeHardWare = foreach ($NodeSPs in $ServiceProcessor) {
+                            $NodeServiceProcessor = foreach ($NodeSPs in $ServiceProcessor) {
                                 [PSCustomObject] @{
                                     'Name' = $NodeSPs.Node
                                     'Type' = $NodeSPs.Type
@@ -186,12 +186,12 @@ function Invoke-AsBuiltReport.NETAPP.OntapStorage {
                                     'Status' = $NodeSPs.Status
                                 }
                             }
-                            if ($NodeHardWare) {
-                                $NodeHardWare | Where-Object { $_.'Status' -like 'offline' -or $_.'Status' -like 'degraded' } | Set-Style -Style Critical -Property 'Status'
-                                $NodeHardWare | Where-Object { $_.'Status' -like 'unknown' -or $_.'Status' -like 'sp-daemon-offline' } | Set-Style -Style Warning -Property 'Status'
-                                $NodeHardWare | Where-Object { $_.'Network Configured' -like "false" } | Set-Style -Style Critical -Property 'Network Configured'
+                            if ($Healthcheck.Node.ServiceProcessor) {
+                                $NodeServiceProcessor | Where-Object { $_.'Status' -like 'offline' -or $_.'Status' -like 'degraded' } | Set-Style -Style Critical -Property 'Status'
+                                $NodeServiceProcessor | Where-Object { $_.'Status' -like 'unknown' -or $_.'Status' -like 'sp-daemon-offline' } | Set-Style -Style Warning -Property 'Status'
+                                $NodeServiceProcessor | Where-Object { $_.'Network Configured' -like "false" } | Set-Style -Style Critical -Property 'Network Configured'
                             }
-                            $NodeHardWare | Sort-Object -Property Name | Table -Name 'Node Service-Processor Information' 
+                            $NodeServiceProcessor | Sort-Object -Property Name | Table -Name 'Node Service-Processor Information' 
                         }#End Section Heading3 Node Service-Processor Information
                     }#End Section Heading2 Node Summary
                 Section -Style Heading2 'Storage Summary' {
@@ -213,7 +213,7 @@ function Invoke-AsBuiltReport.NETAPP.OntapStorage {
                                     'State' = $Aggr.State
                                 }
                             }
-                            if ($AggrSpaceSummary) {
+                            if ($Healthcheck.Storage.Aggr) {
                                 $AggrSpaceSummary | Where-Object { $_.'State' -eq 'failed' } | Set-Style -Style Critical -Property 'State'
                                 $AggrSpaceSummary | Where-Object { $_.'State' -eq 'unknown' -or $_.'State' -eq 'offline' } | Set-Style -Style Warning -Property 'State'
                                 $AggrSpaceSummary | Where-Object { $_.'Used %' -ge 90 } | Set-Style -Style Critical -Property 'Used %'
@@ -243,7 +243,7 @@ function Invoke-AsBuiltReport.NETAPP.OntapStorage {
                                         'Disk Count' = $DiskContainers | Select-Object -ExpandProperty Count
                                         }
                                     }
-                                    if ($DiskSummary) {
+                                    if ($Healthcheck.Storage.DiskStatus) {
                                         $DiskSummary | Where-Object { $_.'Container' -like 'broken' } | Set-Style -Style Critical -Property 'Disk Count'
                                     }
                                 $DiskSummary | Table -Name 'Disk Container Type Summary'
@@ -261,7 +261,7 @@ function Invoke-AsBuiltReport.NETAPP.OntapStorage {
                                             'Disk Paths' = $DiskBroken.DiskPaths
                                             }
                                         }
-                                        if ($DiskFailed) {
+                                        if ($Healthcheck.Storage.DiskStatus) {
                                             $DiskFailed | Set-Style -Style Critical -Property 'Disk Name','Shelf','Bay','Pool','Disk Paths'
                                         }
                                     $DiskFailed | Table -Name 'Failed Disk Summary'
@@ -290,7 +290,7 @@ function Invoke-AsBuiltReport.NETAPP.OntapStorage {
                                     'Type' = $DiskType.DiskType
                                 }
                             }
-                            if ($DiskInventory) {
+                            if ($Healthcheck.Storage.DiskStatus) {
                                 $DiskInventory | Where-Object { $_.'Disk Name' -like '*(*)' } | Set-Style -Style Critical -Property 'Disk Name'
                             }
                             $DiskInventory | Sort-Object -Property Name | Table -Name 'Disk Inventory' 
@@ -300,7 +300,7 @@ function Invoke-AsBuiltReport.NETAPP.OntapStorage {
                             BlankLine
                             $ShelfInventory = foreach ($Nodes in $NodeSum) {
                                 try {
-                                    $Nodeshelf = Get-NcShelf -NodeName $Nodes.Node | Out-Null
+                                    $Nodeshelf = Get-NcShelf -NodeName $Nodes.Node
                                 }
                                 catch {
                                     Write-Host "An error occurred:"
@@ -317,7 +317,7 @@ function Invoke-AsBuiltReport.NETAPP.OntapStorage {
                                     'Bay Count' = $Nodeshelf.ShelfBayCount
                                 }
                             }
-                            if ($ShelfInventory) {
+                            if ($Healthcheck.Storage.ShelfStatus) {
                                 $ShelfInventory | Where-Object { $_.'State' -like 'offline' -or $_.'State' -like 'missing' } | Set-Style -Style Critical -Property 'State'
                                 $ShelfInventory | Where-Object { $_.'State' -like 'unknown' -or $_.'State' -like 'no-status' } | Set-Style -Style Warning -Property 'State'
                             }
@@ -340,7 +340,7 @@ function Invoke-AsBuiltReport.NETAPP.OntapStorage {
                                     'Risk' = $EntitlementRisk.Risk
                                 }
                             }
-                            if ($LicenseSummary) {
+                            if ($Healthcheck.License.RiskSummary) {
                                 $LicenseSummary | Where-Object { $_.'Risk' -like 'low' } | Set-Style -Style Ok -Property 'Risk'
                                 $LicenseSummary | Where-Object { $_.'Risk' -like 'medium' -or $_.'Risk' -like 'unknown' } | Set-Style -Style Warning -Property 'Risk'
                                 $LicenseSummary | Where-Object { $_.'Risk' -like 'High' } | Set-Style -Style Critical -Property 'Risk'
