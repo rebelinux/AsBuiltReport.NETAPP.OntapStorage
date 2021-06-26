@@ -71,7 +71,7 @@ This report is compatible with the following PowerShell versions;
 
 ## :wrench: System Requirements
 
-Each of the following modules will be automatically installed by following the [module installation](https://github.com/AsBuiltReport/AsBuiltReport.Nutanix.PrismElement#package-module-installation) procedure.
+Each of the following modules will be automatically installed by following the [module installation](https://github.com/rebelinux/AsBuiltReport.NETAPP.OntapStorage#package-module-installation) procedure.
 
 These modules may also be manually installed.
 
@@ -90,6 +90,20 @@ Install-Module NetApp.ONTAP
 Install-Module AsBuiltReport
 ```
 
+Ensure you repeat the following steps for the [system requirements](https://github.com/rebelinux/AsBuiltReport.NETAPP.OntapStorage#wrench-system-requirements) also.
+
+1. Download the code package / [latest release](https://github.com/rebelinux/AsBuiltReport.NETAPP.OntapStorage/releases/latest) zip from GitHub
+2. Extract the zip file
+3. Copy the folder `AsBuiltReport.NETAPP.OntapStorage` to a path that is set in `$env:PSModulePath`.
+4. Open a PowerShell terminal window and unblock the downloaded files with
+
+    ```powershell
+    $path = (Get-Module -Name AsBuiltReport.NETAPP.OntapStorage -ListAvailable).ModuleBase; Unblock-File -Path $path\*.psd1; Unblock-File -Path $path\Src\Public\*.ps1; Unblock-File -Path $path\Src\Private\*.ps1
+    ```
+
+5. Close and reopen the PowerShell terminal window.
+
+_Note: You are not limited to installing the module to those example paths, you can add a new entry to the environment variable PSModulePath if you want to use another path._
 ### :closed_lock_with_key: Required Privileges
 
 To generate a NetApp Ontap Array report, a user account with the readonly role of higher on the AFF/FAS is required.
